@@ -1,0 +1,52 @@
+# Flutter
+frontend/vpnexues/.dart_tool/
+frontend/vpnexues/.flutter-plugins
+frontend/vpnexues/.flutter-plugins-dependencies
+frontend/vpnexues/.pub-cache/
+frontend/vpnexues/.pub/
+frontend/vpnexues/build/
+frontend/vpnexues/coverage/
+frontend/vpnexues/android/.gradle/
+frontend/vpnexues/android/app/debug/
+frontend/vpnexues/android/app/profile/
+frontend/vpnexues/android/app/release/
+frontend/vpnexues/ios/Pods/
+frontend/vpnexues/ios/.symlinks/
+frontend/vpnexues/linux/flutter/ephemeral/
+frontend/vpnexues/macos/Pods/
+frontend/vpnexues/macos/Flutter/ephemeral/
+
+# Backend
+backend/vpnexues-backend/target/
+backend/vpnexues-backend/.mvn/wrapper/*.jar
+
+# IDE
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# OS
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Environment
+.env
+.env.*
+*.env.local
+
+# Build artifacts
+*.apk
+*.aab
+*.ipa
+*.app
+
+# Temporary files
+*.py
+*.sh
+*.ps1
+*.log
+*.tmp
