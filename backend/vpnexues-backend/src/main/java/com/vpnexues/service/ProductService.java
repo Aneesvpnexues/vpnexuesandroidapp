@@ -2,6 +2,9 @@ package com.vpnexues.service;
 
 import com.vpnexues.model.Product;
 import com.vpnexues.repository.ProductRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,23 +18,32 @@ public class ProductService {
         this.productRepository = productRepository;
     }
 
-    public List<Product> getAllProducts() {
-        return productRepository.findByIsActiveTrue();
+    public Page<Product> getAllProducts(int page, int size) {
+        return productRepository.findAll(PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt")));
     }
 
-    public List<Product> getProductsByCategory(String category) {
-        return productRepository.findByCategoryAndIsActiveTrue(category);
+    public List<Product> getAllProductsList() {
+        return productRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"));
     }
 
     public List<Product> getPopularProducts() {
-        return productRepository.findTop6ByIsActiveTrueOrderByCreatedAtDesc();
+        return productRepository.findByIsSaleTrue();
     }
 
     public List<Product> searchProducts(String query) {
-        return productRepository.findByNameContainingIgnoreCaseAndIsActiveTrue(query);
+        return productRepository.searchProducts(query);
+    }
+
+    public Page<Product> getProductsByCategory(String category, int page, int size) {
+        return productRepository.findByCategory(category, PageRequest.of(page, size));
+    }
+
+    public List<Product> getProductsByCategoryList(String category) {
+        return productRepository.findByCategory(category);
     }
 
     public Product getProductById(String id) {
-        return productRepository.findById(id).orElse(null);
+        return productRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
     }
 }

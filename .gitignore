@@ -1,0 +1,31 @@
+# Backend / Java
+backend/vpnexues-backend/target/
+backend/vpnexues-backend/src-decompiled/
+*.class
+
+# Environment / Secrets
+.env
+.env.*
+*.env.local
+
+# Build artifacts
+/build/
+*.apk
+*.aab
+*.ipa
+*.app
+/output/
+/codemagic.yaml
+
+# Debug / Test scripts
+*.py
+*.sh
+*.ps1
+*.test_token
+AGENTS.md
+opencode.json
+vpnexues_product_order.txt
+DEPLOYMENT.md
+CHANGELOG.md
+flutter_application_7.iml
+.metadata

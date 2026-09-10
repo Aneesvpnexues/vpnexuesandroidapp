@@ -65,10 +65,10 @@ class ProductCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                if (product.isOrganic)
+                if (product.discount.isNotEmpty)
                   Positioned(
                     top: 8,
-                    left: 8,
+                    right: 8,
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
@@ -76,28 +76,8 @@ class ProductCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
-                        lang.t('product_organic'),
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 9,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ),
-                if (product.isSale)
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: AppColors.saleRed,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: Text(
-                        lang.t('product_sale'),
-                        style: TextStyle(
+                        product.discount,
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 9,
                           fontWeight: FontWeight.w700,
@@ -130,15 +110,6 @@ class ProductCard extends StatelessWidget {
                     fontSize: 11,
                   color: AppColors.textLightGray,
                 ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  product.discount,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.discountOrange,
-                  ),
                 ),
                 const SizedBox(height: 4),
                 Row(

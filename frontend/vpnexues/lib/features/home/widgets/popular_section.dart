@@ -60,7 +60,7 @@ class PopularSection extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 20),
             scrollDirection: Axis.horizontal,
             itemCount: products.length > 8 ? 8 : products.length,
-            separatorBuilder: (_, _) => const SizedBox(width: 14),
+            separatorBuilder: (_, _) => const SizedBox(width: 18),
             itemBuilder: (context, index) {
               return PopularCard(product: products[index]);
             },
@@ -88,9 +88,16 @@ class PopularCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(14),
         boxShadow: const [
           BoxShadow(
-            color: AppColors.cardShadow,
-            blurRadius: 6,
+            color: Color(0x22000000),
+            blurRadius: 12,
+            spreadRadius: 0,
             offset: Offset(0, 2),
+          ),
+          BoxShadow(
+            color: Color(0x11000000),
+            blurRadius: 20,
+            spreadRadius: 2,
+            offset: Offset(0, 6),
           ),
         ],
       ),

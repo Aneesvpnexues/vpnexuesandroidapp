@@ -1,118 +1,107 @@
 package com.vpnexues.service;
 
-import com.vpnexues.model.OtpToken;
+import com.vpnexues.dto.AuthResponse;
+import com.vpnexues.dto.SendOtpRequest;
+import com.vpnexues.dto.UpdateProfileRequest;
+import com.vpnexues.dto.VerifyOtpRequest;
+import com.vpnexues.model.Otp;
 import com.vpnexues.model.User;
-import com.vpnexues.repository.OtpTokenRepository;
+import com.vpnexues.repository.OtpRepository;
 import com.vpnexues.repository.UserRepository;
-import jakarta.mail.internet.MimeMessage;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
+import com.vpnexues.security.JwtTokenProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
+import java.security.SecureRandom;
+import java.time.Instant;
+import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class AuthService {
 
     private final UserRepository userRepository;
-    private final OtpTokenRepository otpTokenRepository;
+    private final OtpRepository otpRepository;
+    private final JwtTokenProvider jwtTokenProvider;
+    private final EmailService emailService;
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
-    @Autowired(required = false)
-    private JavaMailSender mailSender;
-
-    @Value("${spring.mail.username:}")
-    private String fromEmail;
-
-    public AuthService(UserRepository userRepository, OtpTokenRepository otpTokenRepository) {
+    public AuthService(UserRepository userRepository, OtpRepository otpRepository,
+                       JwtTokenProvider jwtTokenProvider, EmailService emailService) {
         this.userRepository = userRepository;
-        this.otpTokenRepository = otpTokenRepository;
+        this.otpRepository = otpRepository;
+        this.jwtTokenProvider = jwtTokenProvider;
+        this.emailService = emailService;
     }
 
-    public String sendOtp(String email) {
-        String otp = String.format("%06d", new Random().nextInt(999999));
-
-        otpTokenRepository.markAllAsUsedByEmail(email);
-
-        OtpToken token = new OtpToken(email, otp, LocalDateTime.now().plusMinutes(5));
-        otpTokenRepository.save(token);
-
-        sendOtpEmail(email, otp);
-
-        return otp;
-    }
-
-    private void sendOtpEmail(String toEmail, String otp) {
-        if (mailSender == null) {
-            System.out.println("=== OTP for " + toEmail + ": " + otp + " ===");
-            System.out.println("(Mail not configured - OTP printed to console)");
-            return;
-        }
-
-        try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-
-            helper.setFrom(fromEmail);
-            helper.setTo(toEmail);
-            helper.setSubject("VPNexues - Your OTP Code");
-
-            String htmlContent = """
-                <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px;">
-                    <div style="background: #0E5A35; color: white; padding: 20px; text-align: center; border-radius: 10px 10px 0 0;">
-                        <h1 style="margin: 0; font-size: 24px;">VPNexues</h1>
-                        <p style="margin: 5px 0 0; font-size: 14px;">Email Verification</p>
-                    </div>
-                    <div style="background: #f9f9f9; padding: 30px; border: 1px solid #e0e0e0;">
-                        <p style="font-size: 16px; color: #333;">Hello,</p>
-                        <p style="font-size: 14px; color: #555;">Your One-Time Password (OTP) for login is:</p>
-                        <div style="text-align: center; margin: 25px 0;">
-                            <span style="background: #0E5A35; color: white; font-size: 32px; font-weight: bold; padding: 15px 30px; border-radius: 8px; letter-spacing: 8px;">%s</span>
-                        </div>
-                        <p style="font-size: 14px; color: #555;">This OTP is valid for <strong>5 minutes</strong>.</p>
-                        <p style="font-size: 14px; color: #555;">If you did not request this, please ignore this email.</p>
-                    </div>
-                    <div style="text-align: center; padding: 15px; font-size: 12px; color: #999;">
-                        <p>&copy; 2026 VPNexues. All rights reserved.</p>
-                    </div>
-                </div>
-                """.formatted(otp);
-
-            helper.setText(htmlContent, true);
-            mailSender.send(message);
-        } catch (Exception e) {
-            System.out.println("=== OTP for " + toEmail + ": " + otp + " ===");
-            System.out.println("Email sending failed: " + e.getMessage());
-        }
+    public void sendOtp(String email) {
+        otpRepository.deleteByEmail(email);
+        String otp = String.format("%06d", SECURE_RANDOM.nextInt(1000000));
+        Otp otpEntity = new Otp();
+        otpEntity.setId(UUID.randomUUID().toString());
+        otpEntity.setEmail(email);
+        otpEntity.setOtp(otp);
+        otpEntity.setExpiresAt(Instant.now().plusSeconds(300));
+        otpRepository.save(otpEntity);
+        emailService.sendOtpEmail(email, otp);
     }
 
     @Transactional
-    public Map<String, Object> verifyOtp(String email, String otp) {
-        OtpToken token = otpTokenRepository.findTopByEmailAndUsedFalseOrderByCreatedAtDesc(email)
-                .orElse(null);
+    public AuthResponse verifyOtp(String email, String otpCode) {
+        Otp otpEntity = otpRepository.findByEmailAndOtpAndVerifiedFalseAndExpiresAtAfter(email, otpCode, Instant.now())
+                .orElseThrow(() -> new RuntimeException("Invalid or expired OTP"));
+        otpEntity.setVerified(true);
+        otpRepository.save(otpEntity);
 
-        if (token == null || token.isExpired()) {
-            return null;
+        Optional<User> existingUser = userRepository.findByEmail(email);
+        User user;
+        if (existingUser.isPresent()) {
+            user = existingUser.get();
+        } else {
+            user = new User();
+            user.setId(UUID.randomUUID().toString());
+            user.setEmail(email);
+            user = userRepository.save(user);
         }
 
-        if (!token.getOtp().equals(otp)) {
-            return null;
+        String token = jwtTokenProvider.generateToken(user.getId(), user.getEmail());
+        AuthResponse response = new AuthResponse();
+        response.setMessage("OTP verified successfully");
+        response.setToken(token);
+        response.setUser(toUserInfo(user));
+        return response;
+    }
+
+    public AuthResponse.UserInfo getUserById(String userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return toUserInfo(user);
+    }
+
+    @Transactional
+    public AuthResponse.UserInfo updateProfile(String userId, UpdateProfileRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        if (request.getName() != null) {
+            user.setName(request.getName());
         }
+        if (request.getPhone() != null) {
+            user.setPhone(request.getPhone());
+        }
+        if (request.getLanguage() != null) {
+            user.setLanguage(request.getLanguage());
+        }
+        user = userRepository.save(user);
+        return toUserInfo(user);
+    }
 
-        token.setUsed(true);
-        otpTokenRepository.save(token);
-
-        User user = userRepository.findByEmail(email)
-                .orElseGet(() -> userRepository.save(new User(email)));
-
-        Map<String, Object> result = new HashMap<>();
-        result.put("userId", user.getId());
-        result.put("email", user.getEmail());
-        return result;
+    private AuthResponse.UserInfo toUserInfo(User user) {
+        AuthResponse.UserInfo info = new AuthResponse.UserInfo();
+        info.setId(user.getId());
+        info.setEmail(user.getEmail());
+        info.setName(user.getName());
+        info.setPhone(user.getPhone());
+        info.setLanguage(user.getLanguage());
+        return info;
     }
 }

@@ -10,10 +10,8 @@ import 'package:vpnexues_pvt/shared/localization/language_provider.dart';
 import 'package:vpnexues_pvt/features/home/widgets/home_header.dart';
 import 'package:vpnexues_pvt/shared/widgets/search_bar_widget.dart';
 import 'package:vpnexues_pvt/features/home/widgets/farm_fresh_banner.dart';
-import 'package:vpnexues_pvt/features/home/widgets/trust_section.dart';
 import 'package:vpnexues_pvt/features/product/widgets/product_card.dart';
 import 'package:vpnexues_pvt/features/home/widgets/popular_section.dart';
-import 'package:vpnexues_pvt/features/home/widgets/flash_sale_section.dart';
 import 'package:vpnexues_pvt/features/home/widgets/best_offers_section.dart';
 import 'all_products_screen.dart';
 
@@ -32,7 +30,6 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Product> _allProducts = sampleProducts;
   List<Product> _popularProducts =
       sampleProducts.where((p) => p.category == 'groceries').toList();
-  List<Product> _flashSaleProducts = [];
 
   String? _selectedCategory;
   String _sortBy = 'name';
@@ -40,7 +37,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _flashSaleProducts = sampleProducts.take(8).toList();
     _loadProducts();
   }
 
@@ -59,10 +55,6 @@ class _HomeScreenState extends State<HomeScreen> {
           _popularProducts = popular.isNotEmpty
               ? popular
               : sorted.where((p) => p.category == 'groceries').toList();
-          _flashSaleProducts = sorted.where((p) => p.isSale).toList();
-          if (_flashSaleProducts.isEmpty) {
-            _flashSaleProducts = sorted.take(8).toList();
-          }
         });
       }
     } catch (_) {}
@@ -401,85 +393,93 @@ class _HomeScreenState extends State<HomeScreen> {
       body: SafeArea(
         child: Stack(
           children: [
-            CustomScrollView(
-              slivers: [
-                const SliverToBoxAdapter(child: SizedBox(height: 12)),
-                const SliverToBoxAdapter(child: HomeHeader()),
-                const SliverToBoxAdapter(child: SizedBox(height: 16)),
-                SliverToBoxAdapter(
-                  child: SearchBarWidget(onFilterTap: _showFilterSheet),
+            Column(
+              children: [
+                // Fixed top section: header + search + banner + icons
+                const SizedBox(height: 12),
+                const HomeHeader(),
+                const SizedBox(height: 16),
+                SearchBarWidget(onFilterTap: _showFilterSheet),
+                const SizedBox(height: 20),
+                const FarmFreshBanner(),
+                const SizedBox(height: 12),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Image.asset(
+                    'assets/images/icons.jpeg',
+                    fit: BoxFit.fitWidth,
+                  ),
                 ),
-                const SliverToBoxAdapter(child: SizedBox(height: 20)),
-                const SliverToBoxAdapter(child: FarmFreshBanner()),
-                const SliverToBoxAdapter(child: SizedBox(height: 16)),
-                const SliverToBoxAdapter(child: TrustSection()),
-                const SliverToBoxAdapter(child: SizedBox(height: 20)),
-                SliverToBoxAdapter(
-                  child: FlashSaleSection(products: _flashSaleProducts),
-                ),
-                const SliverToBoxAdapter(child: SizedBox(height: 24)),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                      Text(
-                        lang.t('home_todays_pick'),
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.textColor(context),
-                        ),
-                      ),
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const AllProductsScreen(title: "Today's Best Picks"),
+                const SizedBox(height: 16),
+                // Scrollable product section below
+                Expanded(
+                  child: CustomScrollView(
+                    slivers: [
+                      SliverToBoxAdapter(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                lang.t('home_todays_pick'),
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w800,
+                                  color: AppColors.textColor(context),
+                                ),
                               ),
-                            );
-                          },
-                          child: Text(
-                            lang.t('home_view_all'),
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.primary,
-                            ),
+                              GestureDetector(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const AllProductsScreen(title: "Today's Best Picks"),
+                                    ),
+                                  );
+                                },
+                                child: Text(
+                                  lang.t('home_view_all'),
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                      const SliverToBoxAdapter(child: SizedBox(height: 12)),
+                      SliverPadding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        sliver: SliverGrid(
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: crossCount,
+                            mainAxisSpacing: 14,
+                            crossAxisSpacing: 14,
+                            childAspectRatio: aspectRatio,
+                          ),
+                          delegate: SliverChildBuilderDelegate(
+                            (context, index) {
+                              final product = _filteredProducts[index];
+                              return ProductCard(product: product);
+                            },
+                            childCount: _filteredProducts.length > 6 ? 6 : _filteredProducts.length,
+                          ),
+                        ),
+                      ),
+                      const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                      const SliverToBoxAdapter(child: BestOffersSection()),
+                      const SliverToBoxAdapter(child: SizedBox(height: 24)),
+                      SliverToBoxAdapter(
+                        child: PopularSection(products: _popularProducts),
+                      ),
+                      const SliverToBoxAdapter(child: SizedBox(height: 100)),
+                    ],
                   ),
                 ),
-                const SliverToBoxAdapter(child: SizedBox(height: 12)),
-                SliverPadding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  sliver: SliverGrid(
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: crossCount,
-                      mainAxisSpacing: 14,
-                      crossAxisSpacing: 14,
-                      childAspectRatio: aspectRatio,
-                    ),
-                    delegate: SliverChildBuilderDelegate(
-                      (context, index) {
-                        final product = _filteredProducts[index];
-                        return ProductCard(product: product);
-                      },
-                      childCount: _filteredProducts.length > 6 ? 6 : _filteredProducts.length,
-                    ),
-                  ),
-                ),
-                const SliverToBoxAdapter(child: SizedBox(height: 24)),
-                const SliverToBoxAdapter(child: BestOffersSection()),
-                const SliverToBoxAdapter(child: SizedBox(height: 24)),
-                SliverToBoxAdapter(
-                  child: PopularSection(products: _popularProducts),
-                ),
-                const SliverToBoxAdapter(child: SizedBox(height: 100)),
               ],
             ),
             if (cart.totalQuantity > 0)

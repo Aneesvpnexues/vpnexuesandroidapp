@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:provider/provider.dart';
 import 'package:vpnexues_pvt/features/cart/providers/cart_provider.dart';
 import 'package:vpnexues_pvt/shared/providers/auth_provider.dart';
@@ -19,13 +18,10 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersive);
 
-  // Initialize Firebase (requires google-services.json / GoogleService-Info.plist)
   try {
-    await Firebase.initializeApp();
     await NotificationService().initialize();
   } catch (e) {
-    debugPrint('Firebase not configured: $e');
-    debugPrint('Add google-services.json (Android) and GoogleService-Info.plist (iOS)');
+    debugPrint('NotificationService init skipped: $e');
   }
 
   runApp(const MyApp());

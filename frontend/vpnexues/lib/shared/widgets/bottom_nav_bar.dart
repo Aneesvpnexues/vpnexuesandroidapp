@@ -99,7 +99,7 @@ class BottomNavBar extends StatelessWidget {
               Icon(Icons.shopping_cart, color: Colors.white, size: size * 0.39),
               const SizedBox(height: 2),
               Text(
-                '₹$cartCount',
+                '$cartCount',
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 10,

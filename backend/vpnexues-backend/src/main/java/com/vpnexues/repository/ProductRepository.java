@@ -1,15 +1,20 @@
 package com.vpnexues.repository;
 
 import com.vpnexues.model.Product;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import java.util.List;
 
-@Repository
 public interface ProductRepository extends JpaRepository<Product, String> {
-    List<Product> findByCategoryAndIsActiveTrue(String category);
-    List<Product> findByIsActiveTrue();
-    List<Product> findByNameContainingIgnoreCaseAndIsActiveTrue(String query);
-    List<Product> findTop6ByIsActiveTrueOrderByCreatedAtDesc();
+    List<Product> findByIsSaleTrue();
+
+    Page<Product> findByCategory(String category, Pageable pageable);
+
+    List<Product> findByCategory(String category);
+
+    @Query("SELECT p FROM Product p WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(p.subtitle) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(p.category) LIKE LOWER(CONCAT('%', :query, '%'))")
+    List<Product> searchProducts(@Param("query") String query);
 }

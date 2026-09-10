@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:vpnexues_pvt/core/data/sample_data.dart';
@@ -31,6 +32,8 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
   List<Product> _filteredProducts = [];
   bool _isLoading = true;
   String _sortBy = 'default';
+  String? _errorMessage;
+  Timer? _searchDebounce;
 
   @override
   void initState() {
@@ -40,7 +43,8 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
   }
 
   Future<void> _loadProducts() async {
-    setState(() => _isLoading = true);
+    if (!mounted) return;
+    setState(() { _isLoading = true; _errorMessage = null; });
     try {
       final products = await _apiService.getProductsByCategory(widget.categoryName);
       if (mounted && products.isNotEmpty) {
@@ -51,7 +55,14 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
         });
         return;
       }
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('getProductsByCategory error: $e');
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Failed to load products. Please try again.';
+        });
+      }
+    }
     final fallback = sampleProducts
         .where((p) => p.category == widget.categoryName)
         .toList();
@@ -65,16 +76,19 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
   }
 
   void _onSearchChanged() {
-    final query = _searchController.text.toLowerCase().trim();
-    setState(() {
-      if (query.isEmpty) {
-        _filteredProducts = List.from(_allProducts);
-      } else {
-        _filteredProducts = _allProducts
-            .where((p) => p.name.toLowerCase().contains(query))
-            .toList();
-      }
-      _applySort();
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 300), () {
+      final query = _searchController.text.toLowerCase().trim();
+      setState(() {
+        if (query.isEmpty) {
+          _filteredProducts = List.from(_allProducts);
+        } else {
+          _filteredProducts = _allProducts
+              .where((p) => p.name.toLowerCase().contains(query))
+              .toList();
+        }
+        _applySort();
+      });
     });
   }
 
@@ -101,6 +115,9 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
   void _showSortBottomSheet() {
     showModalBottomSheet(
       context: context,
+      isDismissible: true,
+      enableDrag: true,
+      barrierColor: Colors.black54,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -137,7 +154,7 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
                   _buildSortOption(context, setModalState, 'price_low', 'Price: Low to High', Icons.arrow_upward),
                   _buildSortOption(context, setModalState, 'price_high', 'Price: High to Low', Icons.arrow_downward),
                   _buildSortOption(context, setModalState, 'name_az', 'Name: A to Z', Icons.sort_by_alpha),
-                  _buildSortOption(context, setModalState, 'name_za', 'Name: Z to A', Icons.sort_by_alpha),
+                  _buildSortOption(context, setModalState, 'name_za', 'Name: Z to A', Icons.text_fields),
                   _buildSortOption(context, setModalState, 'popularity', 'Popularity', Icons.trending_up),
                   const SizedBox(height: 20),
                 ],
@@ -196,6 +213,7 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     super.dispose();
@@ -216,23 +234,25 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
                 Expanded(
                   child: _isLoading
                       ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-                      : SingleChildScrollView(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _buildBanner(),
-                              const SizedBox(height: 12),
-                              _buildSearchBar(),
-                              const SizedBox(height: 16),
-                              _filteredProducts.isEmpty
-                                  ? _buildEmptyState()
-                                  : _buildGrid(),
-                              const SizedBox(height: 16),
-                              _buildTrustBar(),
-                              const SizedBox(height: 100),
-                            ],
-                          ),
-                        ),
+                      : _errorMessage != null && _allProducts.isEmpty
+                          ? _buildErrorState()
+                          : SingleChildScrollView(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  _buildBanner(),
+                                  const SizedBox(height: 12),
+                                  _buildSearchBar(),
+                                  const SizedBox(height: 16),
+                                  _filteredProducts.isEmpty
+                                      ? _buildEmptyState()
+                                      : _buildGrid(),
+                                  const SizedBox(height: 16),
+                                  _buildTrustBar(),
+                                  const SizedBox(height: 100),
+                                ],
+                              ),
+                            ),
                 ),
               ],
             ),
@@ -322,7 +342,7 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    'Handpicked fresh ${widget.title.toLowerCase()},\ndelivered to your doorstep',
+                    'Handpicked fresh ${widget.title[0].toUpperCase()}${widget.title.substring(1).toLowerCase()},\ndelivered to your doorstep',
                     style: const TextStyle(
                       fontSize: 11,
                       color: Colors.white70,
@@ -419,9 +439,9 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
             child: Container(
               height: 48,
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.cardColor(context),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.borderGray, width: 1),
+                border: Border.all(color: AppColors.borderColor(context), width: 1),
               ),
               child: Row(
                 children: [
@@ -433,7 +453,7 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
                       controller: _searchController,
                       style: TextStyle(color: AppColors.textColor(context), fontSize: 14),
                       decoration: InputDecoration(
-                        hintText: 'Search ${widget.title.toLowerCase()}...',
+                        hintText: 'Search ${widget.title[0].toUpperCase()}${widget.title.substring(1).toLowerCase()}...',
                         hintStyle: TextStyle(color: AppColors.textLightGray, fontSize: 14),
                         border: InputBorder.none,
                         contentPadding: EdgeInsets.zero,
@@ -457,9 +477,9 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
               height: 48,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: AppColors.cardColor(context),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: AppColors.borderGray, width: 1),
+                border: Border.all(color: AppColors.borderColor(context), width: 1),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -515,6 +535,45 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
             Text(
               'Try a different search term',
               style: TextStyle(fontSize: 13, color: AppColors.textLightGray),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 40),
+        child: Column(
+          children: [
+            Icon(Icons.error_outline, size: 60, color: AppColors.saleRed),
+            const SizedBox(height: 12),
+            Text(
+              _errorMessage ?? 'Something went wrong',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textColor(context)),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Check your connection and try again',
+              style: TextStyle(fontSize: 13, color: AppColors.textLightGray),
+            ),
+            const SizedBox(height: 20),
+            GestureDetector(
+              onTap: _loadProducts,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Text(
+                  'Retry',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14),
+                ),
+              ),
             ),
           ],
         ),

@@ -8,7 +8,8 @@ import 'package:vpnexues_pvt/shared/localization/language_provider.dart';
 
 class SearchBarWidget extends StatefulWidget {
   final VoidCallback? onFilterTap;
-  const SearchBarWidget({super.key, this.onFilterTap});
+  final bool showFilter;
+  const SearchBarWidget({super.key, this.onFilterTap, this.showFilter = true});
 
   @override
   State<SearchBarWidget> createState() => _SearchBarWidgetState();
@@ -135,28 +136,30 @@ class _SearchBarWidgetState extends State<SearchBarWidget> {
               ),
             ),
           ),
-          const SizedBox(width: 10),
-          GestureDetector(
-            onTap: widget.onFilterTap,
-            child: Container(
-              height: 50,
-              padding: EdgeInsets.symmetric(horizontal: filterPadding),
-              decoration: BoxDecoration(
-                color: AppColors.filterGreen,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Center(
-                child: Text(
-                  lang.t('search_filter'),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
+          if (widget.showFilter) ...[
+            const SizedBox(width: 10),
+            GestureDetector(
+              onTap: widget.onFilterTap,
+              child: Container(
+                height: 50,
+                padding: EdgeInsets.symmetric(horizontal: filterPadding),
+                decoration: BoxDecoration(
+                  color: AppColors.filterGreen,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Center(
+                  child: Text(
+                    lang.t('search_filter'),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
+          ],
         ],
       ),
     );

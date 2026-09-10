@@ -11,6 +11,8 @@ class AppColors {
   static const Color mintTop = Color(0xFFF3FBF5);
   static const Color mintBottom = Color(0xFFDDF0E3);
   static const Color background = Color(0xFFF8F8F8);
+  static const Color categoriesBg = Color(0xFFFAF5EC);
+  static const Color darkCategoriesBg = Color(0xFF1E1E1E);
   static const Color white = Colors.white;
   static const Color textDark = Color(0xFF1A1A1A);
   static const Color textGray = Color(0xFF6F7D75);
@@ -79,5 +81,9 @@ class AppColors {
 
   static Color fieldFillColor(BuildContext context) {
     return Theme.of(context).brightness == Brightness.dark ? darkFieldFill : fieldFill;
+  }
+
+  static Color categoriesBgColor(BuildContext context) {
+    return Theme.of(context).brightness == Brightness.dark ? darkCategoriesBg : categoriesBg;
   }
 }

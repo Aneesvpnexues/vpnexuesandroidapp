@@ -1,74 +1,93 @@
 package com.vpnexues.service;
 
 import com.vpnexues.dto.CartItemRequest;
-import com.vpnexues.model.CartItem;
+import com.vpnexues.model.Cart;
+import com.vpnexues.model.Cart.CartItem;
 import com.vpnexues.model.Product;
-import com.vpnexues.repository.CartItemRepository;
+import com.vpnexues.repository.CartRepository;
 import com.vpnexues.repository.ProductRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
+import java.time.Instant;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class CartService {
 
-    private final CartItemRepository cartItemRepository;
+    private final CartRepository cartRepository;
     private final ProductRepository productRepository;
 
-    public CartService(CartItemRepository cartItemRepository, ProductRepository productRepository) {
-        this.cartItemRepository = cartItemRepository;
+    public CartService(CartRepository cartRepository, ProductRepository productRepository) {
+        this.cartRepository = cartRepository;
         this.productRepository = productRepository;
     }
 
-    public List<Map<String, Object>> getCartItems(Long userId) {
-        List<CartItem> cartItems = cartItemRepository.findByUserId(userId);
-        List<Map<String, Object>> result = new ArrayList<>();
+    public List<CartItem> getCartItems(String userId) {
+        Cart cart = getOrCreateCart(userId);
+        return cart.getItems();
+    }
 
-        for (CartItem item : cartItems) {
-            Optional<Product> product = productRepository.findById(item.getProductId());
-            if (product.isPresent()) {
-                Map<String, Object> map = new java.util.HashMap<>();
-                map.put("id", item.getId());
-                map.put("userId", item.getUserId());
-                map.put("productId", item.getProductId());
-                map.put("quantity", item.getQuantity());
-                map.put("product", product.get());
-                result.add(map);
+    @Transactional
+    public Cart addItem(String userId, CartItemRequest request) {
+        Cart cart = getOrCreateCart(userId);
+        Product product = productRepository.findById(request.getProductId())
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+
+        for (CartItem item : cart.getItems()) {
+            if (item.getProductId().equals(request.getProductId())) {
+                item.setQuantity(item.getQuantity() + request.getQuantity());
+                cart.setUpdatedAt(Instant.now());
+                return cartRepository.save(cart);
             }
         }
-        return result;
+
+        CartItem item = new CartItem();
+        item.setId(UUID.randomUUID().toString());
+        item.setCart(cart);
+        item.setProductId(product.getId());
+        item.setName(product.getName());
+        item.setImageUrl(product.getImageUrl());
+        item.setCurrentPrice(product.getCurrentPrice());
+        item.setWeight(product.getWeight());
+        item.setQuantity(request.getQuantity());
+        cart.getItems().add(item);
+        cart.setUpdatedAt(Instant.now());
+        return cartRepository.save(cart);
     }
 
-    public CartItem addToCart(CartItemRequest request) {
-        Optional<CartItem> existing = cartItemRepository
-                .findByUserIdAndProductId(request.getUserId(), request.getProductId());
-
-        if (existing.isPresent()) {
-            CartItem item = existing.get();
-            item.setQuantity(request.getQuantity());
-            return cartItemRepository.save(item);
-        } else {
-            CartItem item = new CartItem(request.getUserId(), request.getProductId(), request.getQuantity());
-            return cartItemRepository.save(item);
+    @Transactional
+    public Cart updateItem(String userId, CartItemRequest request) {
+        Cart cart = getOrCreateCart(userId);
+        for (CartItem item : cart.getItems()) {
+            if (item.getProductId().equals(request.getProductId())) {
+                if (request.getQuantity() <= 0) {
+                    cart.getItems().remove(item);
+                } else {
+                    item.setQuantity(request.getQuantity());
+                }
+                cart.setUpdatedAt(Instant.now());
+                return cartRepository.save(cart);
+            }
         }
+        throw new RuntimeException("Item not found in cart");
     }
 
-    public CartItem updateQuantity(CartItemRequest request) {
-        Optional<CartItem> existing = cartItemRepository
-                .findByUserIdAndProductId(request.getUserId(), request.getProductId());
-
-        if (existing.isPresent()) {
-            CartItem item = existing.get();
-            item.setQuantity(request.getQuantity());
-            return cartItemRepository.save(item);
-        }
-        return null;
+    @Transactional
+    public Cart removeItem(String userId, String productId) {
+        Cart cart = getOrCreateCart(userId);
+        cart.getItems().removeIf(item -> item.getProductId().equals(productId));
+        cart.setUpdatedAt(Instant.now());
+        return cartRepository.save(cart);
     }
 
-    public void removeFromCart(Long userId, String productId) {
-        cartItemRepository.deleteByUserIdAndProductId(userId, productId);
+    private Cart getOrCreateCart(String userId) {
+        return cartRepository.findByUserId(userId).orElseGet(() -> {
+            Cart cart = new Cart();
+            cart.setId(UUID.randomUUID().toString());
+            cart.setUserId(userId);
+            return cartRepository.save(cart);
+        });
     }
 }
