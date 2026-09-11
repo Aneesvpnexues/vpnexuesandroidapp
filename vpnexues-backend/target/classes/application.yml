@@ -1,13 +1,12 @@
 server:
   port: ${PORT:8080}
-
 spring:
   application:
     name: vpnexues-backend
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/vpnexues}
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}
+    url: ${DATABASE_URL:jdbc:postgresql://aws-0-ap-south-1.pooler.supabase.com:6543/postgres?sslmode=require&prepareThreshold=0}
+    username: ${DB_USERNAME:postgres.ufaqrdgppeikmafynbie}
+    password: ${DB_PASSWORD:VPNexues05*}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -31,11 +30,9 @@ spring:
           connectiontimeout: 5000
           timeout: 5000
           writetimeout: 5000
-
 jwt:
-  secret: ${JWT_SECRET:change-me-to-a-secure-random-string}
+  secret: ${JWT_SECRET:hAGq+0wdcZvn0HVPYGopOoEkBg1G1pw1Xf/bD2ifJCg=}
   expiration: 86400000
-
 app:
   email:
-    from: ${SMTP_USERNAME:}
+    from: ${APP_EMAIL_FROM:noreply@vpnexues.com}
