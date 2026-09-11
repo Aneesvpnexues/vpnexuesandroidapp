@@ -23,7 +23,6 @@ class CartScreen extends StatefulWidget {
 class _CartScreenState extends State<CartScreen> {
   String? _appliedCouponCode;
   double _couponDiscount = 0;
-
   void _checkout(CartProvider cart) {
     final addressProvider = context.read<AddressProvider>();
     if (addressProvider.defaultAddress == null) {
@@ -91,9 +90,15 @@ class _CartScreenState extends State<CartScreen> {
     final cart = context.watch<CartProvider>();
     final items = cart.items.values.toList();
 
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
-      body: SafeArea(
+    return Theme(
+      data: Theme.of(context).copyWith(
+        brightness: Brightness.light,
+        scaffoldBackgroundColor: const Color(0xFFF7F7F7),
+        cardColor: Colors.white,
+      ),
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF7F7F7),
+        body: SafeArea(
         child: Column(
           children: [
             _buildHeader(context),
@@ -118,7 +123,7 @@ class _CartScreenState extends State<CartScreen> {
                           _buildCouponCard(),
                           const SizedBox(height: 12),
                           _buildOrderSummary(cart, items.length),
-                          const SizedBox(height: 100),
+                          const SizedBox(height: 80),
                         ],
                       ),
                     ),
@@ -126,6 +131,7 @@ class _CartScreenState extends State<CartScreen> {
             if (items.isNotEmpty) _buildCheckoutBar(cart),
           ],
         ),
+      ),
       ),
     );
   }
@@ -157,6 +163,7 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   Widget _buildHeader(BuildContext context) {
+    final lang = context.watch<LanguageProvider>();
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: Row(
@@ -174,7 +181,7 @@ class _CartScreenState extends State<CartScreen> {
           Expanded(
             child: Center(
               child: Text(
-                'Cart',
+                lang.t('nav_cart'),
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
@@ -198,6 +205,7 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   Widget _buildDeliveryCard() {
+    final lang = context.watch<LanguageProvider>();
     final addressProvider = context.watch<AddressProvider>();
     final address = addressProvider.defaultAddress;
 
@@ -212,14 +220,15 @@ class _CartScreenState extends State<CartScreen> {
         }
       },
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16),
-        padding: const EdgeInsets.all(16),
+        margin: const EdgeInsets.symmetric(horizontal: 20),
+        padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.cardColor(context),
           borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.borderGray, width: 1),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 10,
               offset: const Offset(0, 2),
             ),
@@ -227,62 +236,49 @@ class _CartScreenState extends State<CartScreen> {
         ),
         child: Row(
           children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: const Color(0xFFF0F7F0),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                Icons.location_on_outlined,
-                color: Color(0xFF2E7D32),
-                size: 24,
-              ),
-            ),
+            // Map preview on left
+            _buildMapPreview(address),
             const SizedBox(width: 14),
+            // Dashed vertical divider
+            _buildVerticalDivider(),
+            const SizedBox(width: 14),
+            // Address info on right
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Deliver to',
+                    lang.t('home_deliver_to'),
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w400,
-                      color: Colors.grey[500],
+                      color: Color(0xFF9CA3AF),
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    address != null
-                        ? '${address.addressTitle}\n${address.addressSubtitle}'
-                        : 'No addresses saved',
+                    address != null ? address.addressTitle : lang.t('address_none'),
                     style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
                       color: Color(0xFF1A1A1A),
                       height: 1.3,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
+                  const SizedBox(height: 2),
+                  Text(
+                    address != null ? address.addressSubtitle : '',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w400,
+                      color: Color(0xFF9CA3AF),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ],
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF0F7F0),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Text(
-                'Change',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF2E7D32),
-                ),
               ),
             ),
           ],
@@ -291,30 +287,60 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
+  Widget _buildMapPreview(dynamic address) {
+    return Container(
+      width: 90,
+      height: 90,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        color: const Color(0xFFE8F5E9),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            // Map-like background with grid lines
+            CustomPaint(
+              size: const Size(90, 90),
+              painter: _MapGridPainter(),
+            ),
+            // Green location pin
+            const Icon(
+              Icons.location_on,
+              color: Color(0xFF0E5A35),
+              size: 32,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVerticalDivider() {
+    return Container(
+      width: 1,
+      height: 70,
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: const Color(0xFFD1D5DB),
+          width: 1,
+        ),
+        borderRadius: BorderRadius.circular(0.5),
+      ),
+    );
+  }
+
   Widget _buildCartHeading(int count) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: const Color(0xFF2E7D32),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(Icons.shopping_cart, color: Colors.white, size: 20),
-          ),
-          const SizedBox(width: 10),
-          Text(
-            'Cart Items ($count)',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: AppColors.textColor(context),
-            ),
-          ),
-        ],
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Text(
+        'Cart Items ($count)',
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w700,
+          color: AppColors.textColor(context),
+        ),
       ),
     );
   }
@@ -325,7 +351,7 @@ class _CartScreenState extends State<CartScreen> {
       return GestureDetector(
         onTap: () => _showCouponSheet(),
         child: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
+          margin: const EdgeInsets.symmetric(horizontal: 20),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
             color: const Color(0xFFF0FAF0),
@@ -338,7 +364,7 @@ class _CartScreenState extends State<CartScreen> {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2E7D32),
+                  color: AppColors.primary,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.local_offer, color: Colors.white, size: 22),
@@ -392,18 +418,12 @@ class _CartScreenState extends State<CartScreen> {
     return GestureDetector(
       onTap: () => _showCouponSheet(),
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16),
+        margin: const EdgeInsets.symmetric(horizontal: 20),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.lightGreen,
           borderRadius: BorderRadius.circular(14),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
         ),
         child: Row(
           children: [
@@ -411,10 +431,10 @@ class _CartScreenState extends State<CartScreen> {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: const Color(0xFFF0F7F0),
-                borderRadius: BorderRadius.circular(12),
+                color: AppColors.primary,
+                shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.local_offer_outlined, color: Color(0xFF2E7D32), size: 22),
+              child: const Icon(Icons.local_offer, color: Colors.white, size: 22),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -440,7 +460,21 @@ class _CartScreenState extends State<CartScreen> {
                 ],
               ),
             ),
-            Icon(Icons.chevron_right, color: AppColors.textLightGray, size: 24),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text(
+                'View All',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -680,34 +714,29 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   Widget _buildOrderSummary(CartProvider cart, int itemCount) {
+    final lang = context.watch<LanguageProvider>();
     final deliveryFee = 40.0;
     final deliveryDiscount = 40.0;
     final itemTotal = cart.totalPrice;
     final totalAmount = itemTotal + deliveryFee - deliveryDiscount - _couponDiscount;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+      margin: const EdgeInsets.symmetric(horizontal: 20),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardColor(context),
         borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        border: Border.all(color: AppColors.borderGray, width: 1),
       ),
       child: Column(
         children: [
-          _buildSummaryRow('Item Total ($itemCount items)', '₹${itemTotal.toStringAsFixed(2)}', isNormal: true),
-          const SizedBox(height: 12),
-          _buildSummaryRow('Delivery Fee', '₹${deliveryFee.toStringAsFixed(2)}', isNormal: true),
-          const SizedBox(height: 12),
-          _buildSummaryRow('Delivery Discount', '-₹${deliveryDiscount.toStringAsFixed(2)}', isDiscount: true),
+          _buildSummaryRow('${lang.t('cart_item_total')} ($itemCount items)', '₹${itemTotal.toStringAsFixed(2)}', isNormal: true),
+          const SizedBox(height: 10),
+          _buildSummaryRow(lang.t('cart_delivery_fee'), '₹${deliveryFee.toStringAsFixed(2)}', isNormal: true),
+          const SizedBox(height: 10),
+          _buildSummaryRow(lang.t('cart_delivery_discount'), '-₹${deliveryDiscount.toStringAsFixed(2)}', isDiscount: true),
           if (_couponDiscount > 0) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
             _buildSummaryRow('Coupon ($_appliedCouponCode)', '-₹${_couponDiscount.toInt()}.00', isDiscount: true),
           ],
           const SizedBox(height: 14),
@@ -716,34 +745,15 @@ class _CartScreenState extends State<CartScreen> {
             decoration: BoxDecoration(
               border: Border(
                 top: BorderSide(
-                  color: Colors.grey[300]!,
+                  color: AppColors.borderGray.withValues(alpha: 0.6),
                   width: 1,
+                  style: BorderStyle.solid,
                 ),
               ),
             ),
           ),
           const SizedBox(height: 14),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Total Amount',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF1A1A1A),
-                ),
-              ),
-              Text(
-                '₹${totalAmount.toInt()}',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                  color: Color(0xFF2E7D32),
-                ),
-              ),
-            ],
-          ),
+          _buildSummaryRow(lang.t('cart_total_amount'), '₹${totalAmount.toInt()}', isTotal: true),
         ],
       ),
     );
@@ -757,19 +767,21 @@ class _CartScreenState extends State<CartScreen> {
         Text(
           label,
           style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-            color: Colors.grey[600],
+            fontSize: isTotal ? 15 : 13,
+            fontWeight: isTotal ? FontWeight.w800 : FontWeight.w500,
+            color: isTotal ? AppColors.textColor(context) : AppColors.textLightGray,
           ),
         ),
         Text(
           value,
           style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
+            fontSize: isTotal ? 16 : 13,
+            fontWeight: isTotal ? FontWeight.w800 : FontWeight.w600,
             color: isDiscount
-                ? const Color(0xFF2E7D32)
-                : const Color(0xFF1A1A1A),
+                ? AppColors.discountGreen
+                : isTotal
+                    ? AppColors.primary
+                    : AppColors.textColor(context),
           ),
         ),
       ],
@@ -777,12 +789,13 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   Widget _buildCheckoutBar(CartProvider cart) {
+    final lang = context.watch<LanguageProvider>();
     final total = cart.totalPrice + 40 - 40 - _couponDiscount;
 
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardColor(context),
         boxShadow: const [
           BoxShadow(
             color: Color(0x1A000000),
@@ -798,7 +811,7 @@ class _CartScreenState extends State<CartScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Total',
+                lang.t('cart_total'),
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w500,
@@ -901,6 +914,7 @@ class _SlideToOrderState extends State<_SlideToOrder>
 
   @override
   Widget build(BuildContext context) {
+    final lang = context.watch<LanguageProvider>();
     return LayoutBuilder(
       builder: (context, constraints) {
         _trackWidth = constraints.maxWidth;
@@ -940,7 +954,7 @@ class _SlideToOrderState extends State<_SlideToOrder>
                     child: Opacity(
                       opacity: _fillPercent > 0.3 ? 1.0 : 0.0,
                       child: Text(
-                        '>>>  Proceed to Checkout',
+                        lang.t('cart_slide_continue'),
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 14,
@@ -956,7 +970,7 @@ class _SlideToOrderState extends State<_SlideToOrder>
                     child: Opacity(
                       opacity: _fillPercent <= 0.3 ? 1.0 : 0.0,
                       child: Text(
-                        '>>>  Proceed to Checkout',
+                        lang.t('cart_slide_continue'),
                         style: TextStyle(
                           color: AppColors.primary,
                           fontSize: 13,
@@ -1019,124 +1033,157 @@ class _CartItemCard extends StatelessWidget {
     final quantity = item.quantity;
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
+      margin: const EdgeInsets.symmetric(horizontal: 20),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.cardColor(context),
         borderRadius: BorderRadius.circular(14),
-        boxShadow: [
+        border: Border.all(color: AppColors.borderGray, width: 1),
+        boxShadow: const [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: AppColors.cardShadow,
+            blurRadius: 6,
+            offset: Offset(0, 2),
           ),
         ],
       ),
-      child: Row(
+      child: Stack(
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Image.network(
-              product.imageUrl,
-              width: 80,
-              height: 80,
-              fit: BoxFit.cover,
-              errorBuilder: (_, _, _) => Container(
-                width: 80,
-                height: 80,
-                color: const Color(0xFFF0F7F0),
-                child: Icon(Icons.image, color: AppColors.textLightGray),
+          Row(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Image.network(
+                  product.imageUrl,
+                  width: 70,
+                  height: 70,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => Container(
+                    width: 70,
+                    height: 70,
+                    color: AppColors.lightGreen,
+                    child: Icon(Icons.image, color: AppColors.textLightGray),
+                  ),
+                ),
               ),
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  product.name,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textColor(context),
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  product.weight,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[500],
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Row(
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '₹${product.currentPrice.toInt()}',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                        color: Color(0xFF2E7D32),
+                      product.name,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textColor(context),
                       ),
                     ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          Column(
-            children: [
-              Container(
-                height: 36,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Colors.grey[300]!, width: 1),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    GestureDetector(
-                      onTap: () => cart.decrementItem(product.id),
-                      child: Container(
-                        width: 32,
-                        height: double.infinity,
-                        alignment: Alignment.center,
-                        child: Icon(Icons.remove, size: 16, color: Colors.grey[600]),
-                      ),
-                    ),
-                    Container(
-                      width: 28,
-                      alignment: Alignment.center,
-                      child: Text(
-                        '$quantity',
+                    const SizedBox(height: 2),
+                      Text(
+                        product.weight,
                         style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textColor(context),
+                          fontSize: 12,
+                          color: AppColors.textLightGray,
                         ),
                       ),
-                    ),
-                    GestureDetector(
-                      onTap: () => cart.addItem(product),
-                      child: Container(
-                        width: 32,
-                        height: double.infinity,
-                        alignment: Alignment.center,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF2E7D32),
-                          borderRadius: BorderRadius.only(
-                            topRight: Radius.circular(10),
-                            bottomRight: Radius.circular(10),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Text(
+                          '₹${product.currentPrice.toInt()}',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.primary,
                           ),
                         ),
-                        child: const Icon(Icons.add, size: 16, color: Colors.white),
+                        const SizedBox(width: 6),
+                        Text(
+                          '₹${product.originalPrice.toInt()}',
+                          style: TextStyle(
+                            fontSize: 12,
+              color: AppColors.textLightGray,
+                            decoration: TextDecoration.lineThrough,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+              color: AppColors.lightGreen,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        product.discount,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.discountGreen,
+                        ),
                       ),
                     ),
                   ],
                 ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Container(
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: AppColors.cardColor(context),
+                      borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: AppColors.borderGray, width: 1),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        GestureDetector(
+                          onTap: () => cart.decrementItem(product.id),
+                          child: Container(
+                            width: 28,
+                            height: double.infinity,
+                            alignment: Alignment.center,
+                            child: Icon(Icons.remove, size: 14, color: AppColors.textColor(context)),
+                          ),
+                        ),
+                        Container(
+                          width: 28,
+                          alignment: Alignment.center,
+                          child: Text(
+                            '$quantity',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textColor(context),
+                            ),
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () => cart.addItem(product),
+                          child: Container(
+                            width: 28,
+                            height: double.infinity,
+                            alignment: Alignment.center,
+                            child: const Icon(Icons.add, size: 14, color: AppColors.primary),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '₹${(product.currentPrice * quantity).toInt()}',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -1144,4 +1191,31 @@ class _CartItemCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _MapGridPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final gridPaint = Paint()
+      ..color = const Color(0xFFD4E8D0)
+      ..strokeWidth = 0.5;
+
+    for (double y = 0; y < size.height; y += 12) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
+    }
+    for (double x = 0; x < size.width; x += 12) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
+    }
+
+    final roadPaint = Paint()
+      ..color = const Color(0xFFC8DECA)
+      ..strokeWidth = 2.5
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawLine(const Offset(0, 30), Offset(size.width, size.height * 0.7), roadPaint);
+    canvas.drawLine(Offset(size.width * 0.3, 0), Offset(size.width * 0.7, size.height), roadPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
