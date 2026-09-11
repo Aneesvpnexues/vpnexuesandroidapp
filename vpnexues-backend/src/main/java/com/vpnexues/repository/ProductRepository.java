@@ -18,6 +18,12 @@ public interface ProductRepository extends JpaRepository<Product, String> {
     @Query("SELECT p FROM Product p WHERE LOWER(p.category) = LOWER(:category)")
     List<Product> findByCategoryIgnoreCase(@Param("category") String category);
 
+    @Query("SELECT p FROM Product p WHERE LOWER(p.category) = LOWER(:category)")
+    Page<Product> findByCategoryIgnoreCase(@Param("category") String category, Pageable pageable);
+
     @Query("SELECT p FROM Product p WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(p.subtitle) LIKE LOWER(CONCAT('%', :query, '%')) OR LOWER(p.category) LIKE LOWER(CONCAT('%', :query, '%'))")
     List<Product> searchProducts(@Param("query") String query);
+
+    @Query("SELECT DISTINCT p.category FROM Product p ORDER BY p.category")
+    List<String> findDistinctCategories();
 }

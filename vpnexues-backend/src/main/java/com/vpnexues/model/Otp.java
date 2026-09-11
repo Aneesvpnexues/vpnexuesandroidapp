@@ -10,6 +10,7 @@ public class Otp {
     @Id
     private String id;
 
+    @Column(unique = true)
     private String email;
 
     private String otp;

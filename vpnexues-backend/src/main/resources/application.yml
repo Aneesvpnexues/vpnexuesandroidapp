@@ -31,7 +31,7 @@ spring:
           timeout: 5000
           writetimeout: 5000
 jwt:
-  secret: ${JWT_SECRET:change-me-to-a-secure-random-string}
+  secret: ${JWT_SECRET:hAGq+0wdcZvn0HVPYGopOoEkBg1G1pw1Xf/bD2ifJCg=}
   expiration: 86400000
 app:
   email:

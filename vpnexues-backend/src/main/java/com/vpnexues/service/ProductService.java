@@ -27,7 +27,11 @@ public class ProductService {
     }
 
     public List<Product> getPopularProducts() {
-        return productRepository.findByIsSaleTrue();
+        List<Product> saleProducts = productRepository.findByIsSaleTrue();
+        if (!saleProducts.isEmpty()) {
+            return saleProducts;
+        }
+        return productRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt")).stream().limit(10).toList();
     }
 
     public List<Product> searchProducts(String query) {
@@ -35,7 +39,7 @@ public class ProductService {
     }
 
     public Page<Product> getProductsByCategory(String category, int page, int size) {
-        return productRepository.findByCategory(category, PageRequest.of(page, size));
+        return productRepository.findByCategoryIgnoreCase(category, PageRequest.of(page, size));
     }
 
     public List<Product> getProductsByCategoryList(String category) {
@@ -45,5 +49,9 @@ public class ProductService {
     public Product getProductById(String id) {
         return productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
+    }
+
+    public List<String> getCategories() {
+        return productRepository.findDistinctCategories();
     }
 }

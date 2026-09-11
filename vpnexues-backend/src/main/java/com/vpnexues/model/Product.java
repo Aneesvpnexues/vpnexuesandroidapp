@@ -1,7 +1,11 @@
 package com.vpnexues.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import java.time.Instant;
+
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 
 @Entity
 @Table(name = "products")
@@ -113,6 +117,7 @@ public class Product {
         this.weight = weight;
     }
 
+    @JsonProperty("isOrganic")
     public boolean isOrganic() {
         return isOrganic;
     }
@@ -121,6 +126,7 @@ public class Product {
         isOrganic = organic;
     }
 
+    @JsonProperty("isSale")
     public boolean isSale() {
         return isSale;
     }
@@ -143,5 +149,16 @@ public class Product {
 
     public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = Instant.now();
+        updatedAt = Instant.now();
+    }
+
+    @PreUpdate
+    protected void onUpdate() {
+        updatedAt = Instant.now();
     }
 }
