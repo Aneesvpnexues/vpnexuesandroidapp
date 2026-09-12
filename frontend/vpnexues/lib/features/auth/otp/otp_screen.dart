@@ -219,7 +219,7 @@ class _OtpScreenState extends State<OtpScreen> {
     _startCooldown();
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('New OTP sent to your email!'),
+        content: Text('New OTP sent to your phone!'),
         backgroundColor: Color(0xFF25D366),
         duration: Duration(seconds: 2),
       ),
@@ -263,7 +263,7 @@ class _OtpScreenState extends State<OtpScreen> {
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          'Enter the 6-digit code sent to\n${widget.email}',
+                          'Enter the 6-digit code sent to\n+91 ${widget.email}',
                           textAlign: TextAlign.center,
                           style: const TextStyle(
                             fontSize: 14,

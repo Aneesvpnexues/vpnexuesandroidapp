@@ -304,126 +304,31 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
     );
   }
 
+  String get _bannerImage {
+    final title = widget.title.toLowerCase();
+    if (title.contains('fruit')) return 'assets/images/banner_fruits.jpg';
+    if (title.contains('beverage')) return 'assets/images/banner_beverages.jpg';
+    if (title.contains('grocer')) return 'assets/images/banner_groceries.jpg';
+    return 'assets/images/category_banner.jpg';
+  }
+
   Widget _buildBanner() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      height: 140,
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      height: 110,
       clipBehavior: Clip.hardEdge,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF1A5E2A),
-            Color(0xFF2E7D32),
-            Color(0xFF1A5E2A),
-          ],
-        ),
+        borderRadius: BorderRadius.circular(14),
       ),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 6,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 18, 0, 18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text(
-                    'Fresh from our\nfarms',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.white,
-                      height: 1.2,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Handpicked fresh ${widget.title[0].toUpperCase()}${widget.title.substring(1).toLowerCase()},\ndelivered to your doorstep',
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: Colors.white70,
-                      height: 1.3,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF4CAF50),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Expanded(
-            flex: 4,
-            child: _buildBannerImages(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBannerImages() {
-    if (_filteredProducts.isEmpty) return const SizedBox();
-
-    final images = _filteredProducts.take(3).toList();
-
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        if (images.length > 2)
-          Positioned(
-            top: 10,
-            right: 8,
-            child: _bannerImage(images[2], 55, 55),
-          ),
-        if (images.length > 1)
-          Positioned(
-            top: 40,
-            right: 40,
-            child: _bannerImage(images[1], 60, 60),
-          ),
-        if (images.isNotEmpty)
-          Positioned(
-            bottom: 10,
-            right: 12,
-            child: _bannerImage(images[0], 65, 65),
-          ),
-      ],
-    );
-  }
-
-  Widget _bannerImage(Product product, double width, double height) {
-    return Container(
-      width: width,
-      height: height,
-      decoration: BoxDecoration(
-        color: AppColors.lightGreen,
-        borderRadius: BorderRadius.circular(10),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
-            blurRadius: 6,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(10),
-        child: ProductImage(
-          imageUrl: product.imageUrl,
-          fit: BoxFit.cover,
-          errorWidget: Container(
-            color: const Color(0xFF3E8E41),
-            child: const Icon(Icons.eco, color: Colors.white, size: 20),
+      child: Image.asset(
+        _bannerImage,
+        width: double.infinity,
+        height: 110,
+        fit: BoxFit.cover,
+        errorBuilder: (_, _, _) => Container(
+          color: const Color(0xFF2E7D32),
+          child: const Center(
+            child: Icon(Icons.image, color: Colors.white54, size: 40),
           ),
         ),
       ),

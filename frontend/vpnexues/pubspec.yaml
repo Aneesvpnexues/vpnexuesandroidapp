@@ -82,7 +82,12 @@ flutter:
     - assets/images/header_login.png
     - assets/images/company_logo.png
     - assets/images/banner.png
+    - assets/images/category_banner.jpg
+    - assets/images/banner_fruits.jpg
+    - assets/images/banner_beverages.jpg
+    - assets/images/banner_groceries.jpg
     - assets/images/icons.jpeg
+    - assets/images/welcome_background.jpeg
     - assets/images/scooty.jpg
     - assets/images/singapore/
     - assets/images/dubai/

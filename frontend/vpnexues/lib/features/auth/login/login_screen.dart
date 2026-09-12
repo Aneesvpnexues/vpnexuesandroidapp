@@ -13,7 +13,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
   final ApiService _apiService = ApiService();
   bool _sendingOtp = false;
   int _resendCooldown = 0;
@@ -22,7 +22,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void dispose() {
     _cooldownTimer?.cancel();
-    _emailController.dispose();
+    _phoneController.dispose();
     super.dispose();
   }
 
@@ -46,10 +46,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _sendOtp() async {
     FocusScope.of(context).unfocus();
-    final email = _emailController.text.trim();
-    if (email.isEmpty || !email.contains('@')) {
+    final phone = _phoneController.text.trim();
+    if (phone.isEmpty || phone.length < 10) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid email address')),
+        const SnackBar(content: Text('Please enter a valid phone number')),
       );
       return;
     }
@@ -59,7 +59,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _sendingOtp = true);
 
     try {
-      await _apiService.sendOtp(email);
+      await _apiService.sendOtp(phone);
     } catch (e) {
       if (!mounted) return;
       setState(() => _sendingOtp = false);
@@ -82,7 +82,7 @@ class _LoginScreenState extends State<LoginScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => OtpScreen(email: email),
+        builder: (context) => OtpScreen(email: phone),
       ),
     );
   }
@@ -177,7 +177,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 8),
                         const Text(
-                          'Enter your email to proceed',
+                          'Enter your phone number to proceed',
                           style: TextStyle(
                             fontSize: 14,
                             color: Color(0xFF6B7280),
@@ -185,7 +185,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 24),
                         const Text(
-                          'Email Address',
+                          'Phone Number',
                           style: TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
@@ -207,7 +207,14 @@ class _LoginScreenState extends State<LoginScreen> {
                             children: [
                               const Padding(
                                 padding: EdgeInsets.symmetric(horizontal: 14),
-                                child: Icon(Icons.email_outlined, color: Color(0xFF9CA3AF), size: 22),
+                                child: Text(
+                                  '🇮🇳 +91',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF1A1A1A),
+                                  ),
+                                ),
                               ),
                               Container(
                                 width: 1,
@@ -216,8 +223,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               Expanded(
                                 child: TextField(
-                                  controller: _emailController,
-                                  keyboardType: TextInputType.emailAddress,
+                                  controller: _phoneController,
+                                  keyboardType: TextInputType.phone,
+                                  maxLength: 10,
                                   cursorColor: const Color(0xFF0E5A35),
                                   style: const TextStyle(
                                     fontSize: 16,
@@ -226,7 +234,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                   decoration: const InputDecoration(
                                     border: InputBorder.none,
-                                    hintText: 'Email address',
+                                    counterText: '',
+                                    hintText: 'Phone number',
                                     hintStyle: TextStyle(
                                       color: Color(0xFF9CA3AF),
                                       fontSize: 15,
@@ -269,7 +278,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                   )
                                 else
-                                  const Icon(Icons.email_outlined,
+                                  const Icon(Icons.send_outlined,
                                       color: Colors.white, size: 22),
                                 const SizedBox(width: 10),
                                 Text(
@@ -277,7 +286,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                       ? 'Sending...'
                                       : _resendCooldown > 0
                                           ? 'Resend OTP in ${_resendCooldown}s'
-                                          : 'Send OTP on Email',
+                                          : 'Send OTP',
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 16,

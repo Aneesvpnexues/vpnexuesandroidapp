@@ -85,59 +85,37 @@ class OnboardingPageWidget extends StatelessWidget {
               children: [
                 SizedBox(height: Responsive.isSmallPhone(context) ? 20 : 30),
 
-                // Logo section - centered
-                Center(
-                  child: Column(
-                    children: [
-                      // Logo circle with semi-transparent backdrop
-                      Container(
-                        width: Responsive.isSmallPhone(context) ? 65 : 80,
-                        height: Responsive.isSmallPhone(context) ? 65 : 80,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.white.withValues(alpha: 0.3),
-                        ),
-                        child: ClipOval(
-                          child: Image.asset(
-                            'assets/images/logo.png',
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                decoration: const BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Color(0xFF0E5A35),
-                                ),
-                                child: const Icon(
-                                  Icons.eco,
-                                  color: Colors.white,
-                                  size: 40,
-                                ),
-                              );
-                            },
-                          ),
-                        ),
+                // Logo section - top left
+                Padding(
+                  padding: EdgeInsets.only(
+                    left: Responsive.isSmallPhone(context) ? 20 : 28,
+                  ),
+                  child: Container(
+                    width: Responsive.isSmallPhone(context) ? 55 : 65,
+                    height: Responsive.isSmallPhone(context) ? 55 : 65,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white.withValues(alpha: 0.3),
+                    ),
+                    child: ClipOval(
+                      child: Image.asset(
+                        'assets/images/logo.png',
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Color(0xFF0E5A35),
+                            ),
+                            child: const Icon(
+                              Icons.eco,
+                              color: Colors.white,
+                              size: 35,
+                            ),
+                          );
+                        },
                       ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'VP NEXUES',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w800,
-                          color: Color(0xFF1B5E20),
-                          letterSpacing: 3,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      const Text(
-                        'IMPORT & EXPORT',
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF4CAF50),
-                          letterSpacing: 2,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
 
@@ -168,8 +146,7 @@ class OnboardingPageWidget extends StatelessWidget {
                               text: page.emphasis,
                               style: TextStyle(
                                 fontSize: Responsive.isSmallPhone(context) ? 26 : 34,
-                                fontWeight: FontWeight.w800,
-                                fontStyle: FontStyle.italic,
+                                fontWeight: FontWeight.w700,
                                 color: const Color(0xFF1B5E20),
                                 height: 1.15,
                               ),
